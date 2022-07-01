@@ -7,6 +7,7 @@ void DX12Game::Init(HWND hWnd, unsigned int Width, unsigned int Height, bool ful
 
 void DX12Game::Update()
 {
+	DirectX12_Graphics::GetInstance()->Update();
 }
 
 void DX12Game::Draw()

@@ -45,7 +45,7 @@ public:
 
 	// ‰Šúˆ—
 	bool Init(HWND hWnd,unsigned int Width, unsigned int Height, bool fullscreen);
-	//
+	//XVˆ—
 	bool Update();
 
 	// I—¹ˆ—

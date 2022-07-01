@@ -140,10 +140,33 @@ bool DirectX12_Graphics::Update()
 	//アロケータークリア
 	sts = _cmdAllocator->Reset();
 
-	if (sts != S_OK) {
-		MessageBox(nullptr, _T("Allocator UpdateReset Error!"), _T("error"), MB_OK);
-	}
-	return false;
+	auto bbIdx = _swapchain->GetCurrentBackBufferIndex();
+
+	//RTVHandleからCommandListにセットする
+	auto rtvH = _rtvHeaps->GetCPUDescriptorHandleForHeapStart();
+
+	rtvH.ptr += _dev->GetDescriptorHandleIncrementSize(
+		D3D12_DESCRIPTOR_HEAP_TYPE_RTV
+	);
+	_cmdList->OMSetRenderTargets(1, &rtvH, true, nullptr);
+
+	//画面クリア
+	float clearColor[] = { 0.0f,1.0f,1.0f,1.0f };
+	_cmdList->ClearRenderTargetView(rtvH, clearColor, 0, nullptr);
+
+	//命令のクローズ
+	_cmdList->Close();
+
+	ComPtr<ID3D12CommandList> cmdLists[] = { _cmdList };
+
+	_cmdQueue->ExecuteCommandLists(1, cmdLists->GetAddressOf());
+
+	_cmdAllocator.Reset();
+	_cmdList->Reset(_cmdAllocator.Get(), nullptr);
+
+	_swapchain.Get()->Present(1,0);
+
+	return sts;
 }
 
 void DirectX12_Graphics::Exit()

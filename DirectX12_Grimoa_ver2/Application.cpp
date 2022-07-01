@@ -160,6 +160,9 @@ unsigned long Application::MainLoop()
 	dxGame->Init(window->GetHandle(),CLIENT_WIDTH,CLIENT_HEIGHT,false);
 
 	while (true) {
+
+		dxGame->Update();
+
 		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
