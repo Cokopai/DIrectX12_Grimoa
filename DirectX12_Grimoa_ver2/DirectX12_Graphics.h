@@ -3,8 +3,9 @@
 #pragma comment (lib,"dxgi.lib")
 
 #include	<d3d12.h>
-#include	 <dxgi1_6.h>
+#include	<dxgi1_6.h>
 #include	<wrl/client.h>
+#include	<vector>
 
 using Microsoft::WRL::ComPtr;
 
@@ -13,20 +14,24 @@ private:
 	DirectX12_Graphics() {}
 
 	//デバイス
-	ComPtr<ID3D12Device>	 _dev = nullptr;
+	ComPtr<ID3D12Device>				 _dev = nullptr;
 	//ファクトリー
-	ComPtr<IDXGIFactory6>	 _dxgiFactory = nullptr;
+	ComPtr<IDXGIFactory6>				 _dxgiFactory = nullptr;
 	//スワップチェーン
-	ComPtr<IDXGISwapChain4>	 _swapchain = nullptr;
+	ComPtr<IDXGISwapChain4>			  	 _swapchain = nullptr;
 
 	//コマンドリスト
-	ComPtr<ID3D12CommandAllocator> _cmdAllocator = nullptr;
-	ComPtr<ID3D12GraphicsCommandList> _cmdList = nullptr;
-	ComPtr<ID3D12CommandQueue> _cmdQueue = nullptr;
+	ComPtr<ID3D12CommandAllocator>		 _cmdAllocator = nullptr;
+	ComPtr<ID3D12GraphicsCommandList>	 _cmdList = nullptr;
+	ComPtr<ID3D12CommandQueue>			 _cmdQueue = nullptr;
 
 	//ディスクリプタヒープ
-	ComPtr<ID3D12DescriptorHeap> _rtvHeaps = nullptr;//RenderTargetView Heaps
+	ComPtr<ID3D12DescriptorHeap>		 _rtvHeaps = nullptr;//RenderTargetView Heaps
 
+	std::vector<ID3D12Resource*>		 _backBuffers;
+	//フェンス
+	ComPtr<ID3D12Fence>				_fence = nullptr;
+	UINT64 _fenceVal = 0;
 public:
 	DirectX12_Graphics(const DirectX12_Graphics&) = delete;
 	DirectX12_Graphics& operator=(const DirectX12_Graphics&) = delete;

@@ -1,3 +1,4 @@
 ﻿  DirectX12_Graphics.cpp
-c:\users\jun\source\repos\directx12_grimoa_ver2\directx12_grimoa_ver2\directx12_graphics.cpp(120): warning C4018: '<': signed と unsigned の数値を比較しようとしました。
+c:\users\jun\source\repos\directx12_grimoa_ver2\directx12_grimoa_ver2\directx12_graphics.cpp(146): warning C4018: '<': signed と unsigned の数値を比較しようとしました。
+c:\users\jun\source\repos\directx12_grimoa_ver2\directx12_grimoa_ver2\directx12_graphics.cpp(224): warning C4244: '初期化中': 'UINT64' から 'UINT' への変換です。データが失われる可能性があります。
   DirectX12_Grimoa_ver2.vcxproj -> C:\Users\jun\source\repos\DirectX12_Grimoa_ver2\x64\Debug\DirectX12_Grimoa_ver2.exe
