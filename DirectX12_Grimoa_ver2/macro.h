@@ -5,6 +5,7 @@
 //!	@author	T.Suzuki
 //*****************************************************************************
 #pragma once
+#include <stdint.h>
 
 // フラグ立てる
 #define FLAG_ENABLE( out, x )	( out |= 1 << x )				
@@ -27,6 +28,11 @@
 //! 配列のサイズを取得
 #define ARRAY_SIZE( array ) ( sizeof( array ) / sizeof( array[ 0 ] ) )
 
+constexpr uint32_t		CLIENT_WIDTH = 1280;
+constexpr uint32_t		CLIENT_HEIGHT = 720;
+
+constexpr uint32_t			SYSTEM_WIDTH = 0;
+constexpr uint32_t			SYSTEM_HEIGHT = 0;
 //******************************************************************************
 //	End of file.
 //******************************************************************************
