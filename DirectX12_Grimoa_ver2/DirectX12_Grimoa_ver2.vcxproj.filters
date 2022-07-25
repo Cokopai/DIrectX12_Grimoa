@@ -13,47 +13,71 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="ソース ファイル\system">
+      <UniqueIdentifier>{b27d72af-0f4d-4603-ac07-4b77c6979233}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\system">
+      <UniqueIdentifier>{86baecb1-0bab-4776-ad74-2801679f1265}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\system\DX12">
+      <UniqueIdentifier>{dfb9aa57-84fd-4d04-9c96-ba827a7fb3fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\system\DX12">
+      <UniqueIdentifier>{4e6b9d5d-1c6c-4e19-98ab-eef698eab603}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ソース ファイル\system\DX12\model">
+      <UniqueIdentifier>{ddcf0a8d-be32-4af7-aafa-e2a13b9538ab}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ヘッダー ファイル\system\DX12\model">
+      <UniqueIdentifier>{c830d86a-4b74-495a-ae75-0d842e37d344}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Application.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\system</Filter>
     </ClCompile>
     <ClCompile Include="CWindow.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\system</Filter>
     </ClCompile>
     <ClCompile Include="CWindowCallback.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="DirectX12_Graphics.cpp">
-      <Filter>ソース ファイル</Filter>
+      <Filter>ソース ファイル\system</Filter>
     </ClCompile>
     <ClCompile Include="DX12Game.cpp">
+      <Filter>ソース ファイル\system\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectX12_Graphics.cpp">
+      <Filter>ソース ファイル\system\DX12</Filter>
+    </ClCompile>
+    <ClCompile Include="vertex.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\system</Filter>
     </ClInclude>
     <ClInclude Include="CWindow.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\system</Filter>
     </ClInclude>
     <ClInclude Include="CWindowCallback.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\system</Filter>
     </ClInclude>
     <ClInclude Include="macro.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="DirectX12_Graphics.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="DX12Game.h">
-      <Filter>ヘッダー ファイル</Filter>
+      <Filter>ヘッダー ファイル\system</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>ヘッダー ファイル\system</Filter>
+    </ClInclude>
+    <ClInclude Include="DirectX12_Graphics.h">
+      <Filter>ヘッダー ファイル\system\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="DX12Game.h">
+      <Filter>ヘッダー ファイル\system\DX12</Filter>
+    </ClInclude>
+    <ClInclude Include="vertex.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
@@ -69,5 +93,10 @@
     <FxCompile Include="BasicPixelShader.hlsl">
       <Filter>リソース ファイル</Filter>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BasicShaderHeader.hlsli">
+      <Filter>リソース ファイル</Filter>
+    </None>
   </ItemGroup>
 </Project>

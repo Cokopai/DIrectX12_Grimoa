@@ -1,6 +1,3 @@
-﻿  Application.cpp
-  DX12Game.cpp
-  DirectX12_Graphics.cpp
-c:\users\jun\source\repos\directx12_grimoa_ver2\directx12_grimoa_ver2\directx12_graphics.cpp(152): warning C4018: '<': signed と unsigned の数値を比較しようとしました。
-  コードを生成中...
+﻿  DirectX12_Graphics.cpp
+c:\users\jun\source\repos\directx12_grimoa_ver2\directx12_grimoa_ver2\directx12_graphics.cpp(167): warning C4018: '<': signed と unsigned の数値を比較しようとしました。
   DirectX12_Grimoa_ver2.vcxproj -> C:\Users\jun\source\repos\DirectX12_Grimoa_ver2\x64\Debug\DirectX12_Grimoa_ver2.exe

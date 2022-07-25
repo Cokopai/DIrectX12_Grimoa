@@ -4,6 +4,7 @@
 #include <d3d12sdklayers.h>
 #include <tchar.h>
 #include <DirectXMath.h>
+#include<vector>
 
 #include "DirectX12_Graphics.h"
 #include "macro.h"
@@ -25,7 +26,7 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 
 
 	sts = D3D12CreateDevice(
-	nullptr,
+		nullptr,
 		D3D_FEATURE_LEVEL_12_1,
 		IID_PPV_ARGS(&_dev)
 	);
@@ -90,7 +91,7 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 	cmdQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;//プライオリティは指定なし
 	cmdQueueDesc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
-	sts = _dev->CreateCommandQueue(&cmdQueueDesc,IID_PPV_ARGS(&_cmdQueue));
+	sts = _dev->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(&_cmdQueue));
 	if (sts != S_OK) {
 		MessageBox(nullptr, _T("DirectX12_Graphics CreateCommandQueue Error!"), _T("error"), MB_OK);
 	}
@@ -133,10 +134,24 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 	heapDesc.NumDescriptors = 2; //スワップチェーンの表裏で二つ
 	heapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 
-	sts = _dev->CreateDescriptorHeap(&heapDesc,IID_PPV_ARGS(&_rtvHeaps));
+	sts = _dev->CreateDescriptorHeap(&heapDesc, IID_PPV_ARGS(&_rtvHeaps));
 	if (sts != S_OK) {
 		MessageBox(nullptr, _T("DirectX12_Graphics CreateRTVHeaps Error!"), _T("error"), MB_OK);
 	}
+	
+	/*
+	//シェーダーから見えるように
+	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
+	descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;//タイプ:SRV
+	descHeapDesc.NodeMask = 0;
+	descHeapDesc.NumDescriptors = 1;
+	descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+
+	sts = _dev->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&_texDescHeap));
+	if (sts != S_OK) {
+		MessageBox(nullptr, _T("DirectX12_Graphics CreateDescriptorHeap Error!"), _T("error"), MB_OK);
+	}
+	*/
 
 	sts = _dev->CreateFence(_fenceVal, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&_fence));
 
@@ -167,7 +182,7 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 			D3D12_DESCRIPTOR_HEAP_TYPE_RTV
 		);
 	}
-	
+
 	ID3DBlob* errorBlob;
 
 
@@ -181,7 +196,7 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 		"BasicVS", "vs_5_0",//関数はBasicVS,対象はvs_5_0
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
 		0,
-		&_vsBlob,&errorBlob
+		&_vsBlob, &errorBlob
 	);
 
 	if (FAILED(sts)) {
@@ -202,11 +217,11 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 
 			OutputDebugStringA(errstr.c_str());//デバック出力
 		}
-	}	
+	}
 	////////////////////////////////////////////////////////////////
 	//VertexShader Compile	End
 	////////////////////////////////////////////////////////////////
-	
+
 
 	////////////////////////////////////////////////////////////////
 	//PixelShader Compile	Start
@@ -218,7 +233,7 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 		"BasicPS", "ps_5_0",//関数はBasicPS,対象はps_5_0
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION,
 		0,
-		&_psBlob,&errorBlob
+		&_psBlob, &errorBlob
 	);
 
 	if (FAILED(sts)) {
@@ -239,7 +254,7 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 
 			OutputDebugStringA(errstr.c_str());//デバック出力
 		}
-	}	
+	}
 	////////////////////////////////////////////////////////////////
 	//PixelShader Compile	End
 	////////////////////////////////////////////////////////////////
@@ -279,11 +294,16 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 
 	//入力レイアウトの適応
 	D3D12_INPUT_ELEMENT_DESC inputLayout[] = {
-		{
-	"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,
-	D3D12_APPEND_ALIGNED_ELEMENT,
-	D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
+		{	//座標情報
+		"POSITION",0,DXGI_FORMAT_R32G32B32_FLOAT,0,
+		D3D12_APPEND_ALIGNED_ELEMENT,
+		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
 		},
+		{	//UV情報
+		"TEXCOORD",0,DXGI_FORMAT_R32G32_FLOAT,0,
+		D3D12_APPEND_ALIGNED_ELEMENT,
+		D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA,0
+		}
 	};
 
 	_pipeline.InputLayout.pInputElementDescs = inputLayout;
@@ -299,9 +319,48 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 	_pipeline.SampleDesc.Count = 1;  //サンプリングは1ピクセルにつき 1
 	_pipeline.SampleDesc.Quality = 0;//クオリティ:最低
 
+	////////////////////////////////////////////////////////////////
+	//ルートシグネクチャ	START
+	////////////////////////////////////////////////////////////////
+
 	D3D12_ROOT_SIGNATURE_DESC rootSignatureDesc = {};
 
 	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
+
+	D3D12_DESCRIPTOR_RANGE descTblRange = {};
+	descTblRange.NumDescriptors = 1;//テクスチャ1つ
+	descTblRange.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;//種別:SRV
+	descTblRange.BaseShaderRegister = 0;//0番スロットから
+	descTblRange.OffsetInDescriptorsFromTableStart =
+		D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
+
+	D3D12_ROOT_PARAMETER rootparam = {};
+	rootparam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+	//ピクセルシェーダーから見える
+	rootparam.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
+
+	//rootparam.DescriptorTable.pDescriptorRanges = &descTblRange;
+	//ディスクリプタレンジ数
+	//rootparam.DescriptorTable.NumDescriptorRanges = 1;
+
+	//rootSignatureDesc.pParameters = &rootparam;
+	//rootSignatureDesc.NumParameters = 1;
+
+	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
+	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.AddressV = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	samplerDesc.BorderColor =
+		D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+	samplerDesc.Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	samplerDesc.MaxLOD = D3D12_FLOAT32_MAX;
+	samplerDesc.MinLOD = 0.0f;
+	samplerDesc.ShaderVisibility =
+		D3D12_SHADER_VISIBILITY_PIXEL;//ピクセルシェーダーから見える
+	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;//リサンプライズしない
+
+	//rootSignatureDesc.pStaticSamplers = &samplerDesc;
+	//rootSignatureDesc.NumStaticSamplers = 1;
 
 	ID3DBlob* rootSigBlob = nullptr;
 
@@ -321,7 +380,11 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 		rootSigBlob->GetBufferSize(),
 		IID_PPV_ARGS(&_rootSignature)
 	);
+	////////////////////////////////////////////////////////////////
+	//ルートシグネクチャ	END
+	////////////////////////////////////////////////////////////////
 
+	//ルートシグネクチャ設定
 	_pipeline.pRootSignature = _rootSignature;
 
 	sts = _dev->CreateGraphicsPipelineState(&_pipeline, IID_PPV_ARGS(&_pipelinestate));
@@ -333,17 +396,101 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 	//グラフィックパイプラインステート	End
 	////////////////////////////////////////////////////////////////
 
+	textureData.resize(256 * 256);
+
+	//RandomTexture(textureData);
+	for (auto& rgba : textureData) {
+		rgba.R = rand() % 256;
+		rgba.G = rand() % 256;
+		rgba.B = rand() % 256;
+		rgba.A = 255;
+	}
 	return sts;
 }
 
 bool DirectX12_Graphics::BeforeRender()
 {
+	
+	/*
+	//WriteToSubResource でテクスチャ情報を転送するためのヒープ設定
+	D3D12_HEAP_PROPERTIES heapProp = {};
+	//カスタム設定
+	heapProp.Type = D3D12_HEAP_TYPE_CUSTOM;
+	//ライトバックで書き込み
+	heapProp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_WRITE_BACK;
+	//転送はL0,つまりCPU側から直接行う
+	heapProp.MemoryPoolPreference = D3D12_MEMORY_POOL_L0;
+	//単一アダプターのため 0
+	heapProp.CreationNodeMask = 0;
+	heapProp.VisibleNodeMask = 0;
+
+	resdesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;//RGBAフォーマット
+	resdesc.Width = 256;
+	resdesc.Height = 256;
+	resdesc.DepthOrArraySize = 1;
+	resdesc.SampleDesc.Count = 1;
+	resdesc.SampleDesc.Quality = 0;
+	resdesc.MipLevels = 1;
+	resdesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resdesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	resdesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+
+	ID3D12Resource* texBuffer = nullptr;
+	sts = _dev->CreateCommittedResource(
+		&heapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&resdesc,
+		D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE,
+		nullptr,
+		IID_PPV_ARGS(&texBuffer)
+	); 
+	if (sts != S_OK) {
+		MessageBox(nullptr, _T("textureBuffer Create Error!"), _T("error"), MB_OK);
+	}
+
+	sts = texBuffer->WriteToSubresource(
+		0,
+		nullptr,//全領域へコピー
+		textureData.data(),//元データサイズ
+		sizeof(TexRGBA) * 256,//1ラインサイズ
+		sizeof(TexRGBA) * textureData.size()//全サイズ
+	);
+	if (sts != S_OK) {
+		MessageBox(nullptr, _T("textureBuffer Copy Texture Error!"), _T("error"), MB_OK);
+	}
+
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+
+	srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	srvDesc.Shader4ComponentMapping =
+		D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = 1;//ミップマップは使用しないので１
+
+	_dev->CreateShaderResourceView(
+		texBuffer,
+		&srvDesc,
+		_texDescHeap->GetCPUDescriptorHandleForHeapStart()
+	);
+
+	*/
+	return false;
+}
+
+void DirectX12_Graphics::Draw()
+{
 	HRESULT sts = 0;
 
-	XMFLOAT3 vertices[]{
-		{-0.5f,-0.7f,0.0f},
-		{0.0f,0.7f,0.0f},
-		{0.5f,-0.7f,0.0f}
+	Vertex vertices[]{
+		{{-0.4f,-0.7f,0.0f},{0.0f,1.0f}},
+		{{-0.4f,0.7f,0.0f},{0.0f,0.0f}},
+		{{0.4f, -0.7f, 0.0f},{1.0f,1.0f}},
+		{{0.4f,0.7f,0.0f},{1.0f,0.0f}}
+	};
+
+	unsigned short indeces[]{
+		0,1,2,
+		2,1,3
 	};
 
 	auto bbIdx = _swapchain->GetCurrentBackBufferIndex();
@@ -364,10 +511,6 @@ bool DirectX12_Graphics::BeforeRender()
 
 	_cmdList->ClearRenderTargetView(rtvH, clearColor, 0, nullptr);
 
-	BarrierDesc.Transition.StateBefore = D3D12_RESOURCE_STATE_RENDER_TARGET;
-	BarrierDesc.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
-	_cmdList->ResourceBarrier(1, &BarrierDesc);
-
 	D3D12_HEAP_PROPERTIES heapprop = { };
 
 	heapprop.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -386,7 +529,7 @@ bool DirectX12_Graphics::BeforeRender()
 	resdesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 	resdesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-	ID3D12Resource* verBuffer = nullptr;
+	ID3D12Resource* vertexBuffer = nullptr;
 
 	ID3D12Device* _dev = DirectX12_Graphics::GetInstance()->GetDXDevice();
 	sts = _dev->CreateCommittedResource(
@@ -395,34 +538,52 @@ bool DirectX12_Graphics::BeforeRender()
 		&resdesc,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		nullptr,
-		IID_PPV_ARGS(&verBuffer)
+		IID_PPV_ARGS(&vertexBuffer)
 	);
-
 	if (sts != S_OK) {
 		MessageBox(nullptr, _T("VertexBuffer Create Error!"), _T("error"), MB_OK);
 	}
 
-	XMFLOAT3* vertMap = nullptr;
+	Vertex* vertMap = nullptr;
 
-	sts = verBuffer->Map(0, nullptr, (void**)&vertMap);
+	sts = vertexBuffer->Map(0, nullptr, (void**)&vertMap);
 
 	std::copy(std::begin(vertices), std::end(vertices), vertMap);
 
-	verBuffer->Unmap(0, nullptr);
+	vertexBuffer->Unmap(0, nullptr);
 
 	D3D12_VERTEX_BUFFER_VIEW vbView = { };
 
-	vbView.BufferLocation = verBuffer->GetGPUVirtualAddress();
+	vbView.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
 	vbView.SizeInBytes = sizeof(vertices);
 	vbView.StrideInBytes = sizeof(vertices[0]);
 
-	_cmdList->IASetVertexBuffers(0, 1, &vbView);
+	ID3D12Resource* indexBuffer = nullptr;
+	resdesc.Width = sizeof(indeces);
 
-	return sts;
-}
+	sts = _dev->CreateCommittedResource(
+		&heapprop,
+		D3D12_HEAP_FLAG_NONE,
+		&resdesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&indexBuffer)
+	);
+	if (sts != S_OK) {
+		MessageBox(nullptr, _T("IndexBuffer Create Error!"), _T("error"), MB_OK);
+	}
 
-void DirectX12_Graphics::Draw()
-{
+	unsigned short* mappedIdx = nullptr;
+	indexBuffer->Map(0, nullptr, (void**)&mappedIdx);
+	std::copy(std::begin(indeces), std::end(indeces), mappedIdx);
+	indexBuffer->Unmap(0, nullptr);
+
+	D3D12_INDEX_BUFFER_VIEW idView = { };
+
+	idView.BufferLocation = indexBuffer->GetGPUVirtualAddress();
+	idView.Format = DXGI_FORMAT_R16_UINT;
+	idView.SizeInBytes = sizeof(indeces);
+
 	D3D12_VIEWPORT _viewPort = {};
 	_viewPort.Width = CLIENT_WIDTH;
 	_viewPort.Height = CLIENT_HEIGHT;
@@ -441,11 +602,18 @@ void DirectX12_Graphics::Draw()
 
 	_cmdList->RSSetViewports(1, &_viewPort);
 	_cmdList->RSSetScissorRects(1, &_scissorrect);
+	_cmdList->SetGraphicsRootSignature(_rootSignature);
+
+	_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	_cmdList->IASetVertexBuffers(0, 1, &vbView);
+	_cmdList->IASetIndexBuffer(&idView);
 
 	_cmdList->SetGraphicsRootSignature(_rootSignature);
-	_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//_cmdList->SetDescriptorHeaps(1, &_texDescHeap);
+	//_cmdList->SetGraphicsRootDescriptorTable(0, _texDescHeap->GetGPUDescriptorHandleForHeapStart());
 
-	_cmdList->DrawInstanced(3, 1, 0, 0);
+	_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+	_cmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 }
 
 bool DirectX12_Graphics::AfterRender()
@@ -479,4 +647,6 @@ void DirectX12_Graphics::Exit()
 {
 	SAFE_RELEASE(_pipelinestate);
 	SAFE_RELEASE(_rootSignature);
+	//SAFE_RELEASE(_texDescHeap);
+	SAFE_RELEASE(_rtvHeaps);
 }

@@ -156,6 +156,7 @@
     <ClCompile Include="DirectX12_Graphics.cpp" />
     <ClCompile Include="DX12Game.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="vertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
@@ -165,6 +166,7 @@
     <ClInclude Include="DX12Game.h" />
     <ClInclude Include="macro.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="vertex.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="DirectX12_Grimoa_ver2.rc" />
@@ -183,6 +185,9 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
     </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BasicShaderHeader.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

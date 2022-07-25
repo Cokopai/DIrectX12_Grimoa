@@ -8,12 +8,12 @@ void DX12Game::Init(HWND hWnd, unsigned int Width, unsigned int Height, bool ful
 
 void DX12Game::Update()
 {
-	DirectX12_Graphics::GetInstance()->BeforeRender();
 }
 
 void DX12Game::Draw()
 {
 	DirectX12_Graphics* ins = DirectX12_Graphics::GetInstance();
+
 	ins->BeforeRender();
 	ins->Draw();
 	ins->AfterRender();
@@ -21,5 +21,5 @@ void DX12Game::Draw()
 
 void DX12Game::Dispose()
 {
-
+	DirectX12_Graphics::GetInstance()->Exit();
 }

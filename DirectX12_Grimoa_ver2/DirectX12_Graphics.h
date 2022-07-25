@@ -9,6 +9,8 @@
 #include	<vector>
 #include	<d3dcompiler.h>
 
+#include "vertex.h"
+
 using Microsoft::WRL::ComPtr;
 
 class DirectX12_Graphics {
@@ -27,23 +29,24 @@ private:
 	ComPtr<ID3D12GraphicsCommandList>	 _cmdList = nullptr;
 	ComPtr<ID3D12CommandQueue>			 _cmdQueue = nullptr;
 
-	//ディスクリプタヒープ
-	ComPtr<ID3D12DescriptorHeap>		 _rtvHeaps = nullptr;//RenderTargetView Heaps
-
 	ComPtr<ID3DBlob>					 _vsBlob;
 	ComPtr<ID3DBlob>					 _psBlob;
 	//バックバッファ
 	std::vector<ComPtr<ID3D12Resource>>_backBuffers;
+
 	//フェンス
 	ComPtr<ID3D12Fence>					 _fence = nullptr;
 	UINT64 _fenceVal = 0;
 
 	ID3D12PipelineState*				_pipelinestate = nullptr;
 	ID3D12RootSignature*				_rootSignature = nullptr;
+	//ID3D12DescriptorHeap*				_texDescHeap   = nullptr;
+	ID3D12DescriptorHeap*				_rtvHeaps	= nullptr;//RenderTargetView Heaps
 
 	//画面クリア　カラー
 	float clearColor[4] = { 0.6f,1.0f,0.8f,1.0f };
 
+	std::vector<TexRGBA> textureData;
 public:
 	DirectX12_Graphics(const DirectX12_Graphics&) = delete;
 	DirectX12_Graphics& operator=(const DirectX12_Graphics&) = delete;
@@ -52,7 +55,7 @@ public:
 
 
 	~DirectX12_Graphics() {
-		Exit();
+		//Exit();
 	}
 
 	static DirectX12_Graphics* GetInstance() {
