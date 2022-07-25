@@ -40,7 +40,7 @@ private:
 
 	ID3D12PipelineState*				_pipelinestate = nullptr;
 	ID3D12RootSignature*				_rootSignature = nullptr;
-	//ID3D12DescriptorHeap*				_texDescHeap   = nullptr;
+	ID3D12DescriptorHeap*				_texDescHeap   = nullptr;
 	ID3D12DescriptorHeap*				_rtvHeaps	= nullptr;//RenderTargetView Heaps
 
 	//画面クリア　カラー

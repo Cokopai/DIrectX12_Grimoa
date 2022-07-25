@@ -139,7 +139,7 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 		MessageBox(nullptr, _T("DirectX12_Graphics CreateRTVHeaps Error!"), _T("error"), MB_OK);
 	}
 	
-	/*
+	
 	//シェーダーから見えるように
 	D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc = {};
 	descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;//タイプ:SRV
@@ -151,7 +151,6 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 	if (sts != S_OK) {
 		MessageBox(nullptr, _T("DirectX12_Graphics CreateDescriptorHeap Error!"), _T("error"), MB_OK);
 	}
-	*/
 
 	sts = _dev->CreateFence(_fenceVal, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&_fence));
 
@@ -339,12 +338,12 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 	//ピクセルシェーダーから見える
 	rootparam.ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;
 
-	//rootparam.DescriptorTable.pDescriptorRanges = &descTblRange;
+	rootparam.DescriptorTable.pDescriptorRanges = &descTblRange;
 	//ディスクリプタレンジ数
-	//rootparam.DescriptorTable.NumDescriptorRanges = 1;
+	rootparam.DescriptorTable.NumDescriptorRanges = 1;
 
-	//rootSignatureDesc.pParameters = &rootparam;
-	//rootSignatureDesc.NumParameters = 1;
+	rootSignatureDesc.pParameters = &rootparam;
+	rootSignatureDesc.NumParameters = 1;
 
 	D3D12_STATIC_SAMPLER_DESC samplerDesc = {};
 	samplerDesc.AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -359,8 +358,8 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 		D3D12_SHADER_VISIBILITY_PIXEL;//ピクセルシェーダーから見える
 	samplerDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;//リサンプライズしない
 
-	//rootSignatureDesc.pStaticSamplers = &samplerDesc;
-	//rootSignatureDesc.NumStaticSamplers = 1;
+	rootSignatureDesc.pStaticSamplers = &samplerDesc;
+	rootSignatureDesc.NumStaticSamplers = 1;
 
 	ID3DBlob* rootSigBlob = nullptr;
 
@@ -410,8 +409,8 @@ bool DirectX12_Graphics::Init(HWND hWnd, unsigned int window_width, unsigned int
 
 bool DirectX12_Graphics::BeforeRender()
 {
+	HRESULT sts;
 	
-	/*
 	//WriteToSubResource でテクスチャ情報を転送するためのヒープ設定
 	D3D12_HEAP_PROPERTIES heapProp = {};
 	//カスタム設定
@@ -424,6 +423,7 @@ bool DirectX12_Graphics::BeforeRender()
 	heapProp.CreationNodeMask = 0;
 	heapProp.VisibleNodeMask = 0;
 
+	D3D12_RESOURCE_DESC resdesc = {};
 	resdesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;//RGBAフォーマット
 	resdesc.Width = 256;
 	resdesc.Height = 256;
@@ -473,8 +473,7 @@ bool DirectX12_Graphics::BeforeRender()
 		_texDescHeap->GetCPUDescriptorHandleForHeapStart()
 	);
 
-	*/
-	return false;
+	return sts;
 }
 
 void DirectX12_Graphics::Draw()
@@ -609,8 +608,8 @@ void DirectX12_Graphics::Draw()
 	_cmdList->IASetIndexBuffer(&idView);
 
 	_cmdList->SetGraphicsRootSignature(_rootSignature);
-	//_cmdList->SetDescriptorHeaps(1, &_texDescHeap);
-	//_cmdList->SetGraphicsRootDescriptorTable(0, _texDescHeap->GetGPUDescriptorHandleForHeapStart());
+	_cmdList->SetDescriptorHeaps(1, &_texDescHeap);
+	_cmdList->SetGraphicsRootDescriptorTable(0, _texDescHeap->GetGPUDescriptorHandleForHeapStart());
 
 	_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 	_cmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
@@ -647,6 +646,6 @@ void DirectX12_Graphics::Exit()
 {
 	SAFE_RELEASE(_pipelinestate);
 	SAFE_RELEASE(_rootSignature);
-	//SAFE_RELEASE(_texDescHeap);
+	SAFE_RELEASE(_texDescHeap);
 	SAFE_RELEASE(_rtvHeaps);
 }
