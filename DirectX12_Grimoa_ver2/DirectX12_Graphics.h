@@ -1,15 +1,19 @@
 #pragma once
+#pragma comment (lib,"DirectXTex.lib")
 #pragma comment (lib,"d3d12.lib")
 #pragma comment (lib,"dxgi.lib")
 #pragma comment (lib,"d3dcompiler.lib")
 
 #include	<d3d12.h>
+#include	<DirectXTex.h>
 #include	<dxgi1_6.h>
 #include	<wrl/client.h>
 #include	<vector>
+#include	<array>
 #include	<d3dcompiler.h>
 
 #include "vertex.h"
+#include "ModelData.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -32,21 +36,20 @@ private:
 	ComPtr<ID3DBlob>					 _vsBlob;
 	ComPtr<ID3DBlob>					 _psBlob;
 	//バックバッファ
-	std::vector<ComPtr<ID3D12Resource>>_backBuffers;
+	std::array<ComPtr<ID3D12Resource>, 2>_backBuffers;
 
 	//フェンス
 	ComPtr<ID3D12Fence>					 _fence = nullptr;
 	UINT64 _fenceVal = 0;
 
-	ID3D12PipelineState*				_pipelinestate = nullptr;
-	ID3D12RootSignature*				_rootSignature = nullptr;
-	ID3D12DescriptorHeap*				_texDescHeap   = nullptr;
+	ComPtr<ID3D12PipelineState>			_pipelinestate = nullptr;
+	ComPtr<ID3D12RootSignature>			_rootSignature = nullptr;
 	ID3D12DescriptorHeap*				_rtvHeaps	= nullptr;//RenderTargetView Heaps
 
 	//画面クリア　カラー
 	float clearColor[4] = { 0.6f,1.0f,0.8f,1.0f };
 
-	std::vector<TexRGBA> textureData;
+	//std::vector<TexRGBA> textureData;
 public:
 	DirectX12_Graphics(const DirectX12_Graphics&) = delete;
 	DirectX12_Graphics& operator=(const DirectX12_Graphics&) = delete;
@@ -55,7 +58,7 @@ public:
 
 
 	~DirectX12_Graphics() {
-		//Exit();
+		Exit();
 	}
 
 	static DirectX12_Graphics* GetInstance() {
@@ -67,7 +70,7 @@ public:
 	bool Init(HWND hWnd,unsigned int Width, unsigned int Height, bool fullscreen);
 	//更新処理
 	bool BeforeRender();
-	void Draw();
+	void Draw(ModelData* modelData)const;
 	bool AfterRender();
 
 	// 終了処理
@@ -83,4 +86,5 @@ public:
 		return _swapchain.Get();
 	}
 
+	void UpdateBufferSize(unsigned char* vertices);
 };

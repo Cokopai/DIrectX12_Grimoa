@@ -1,10 +1,15 @@
 #pragma once
 #include "DX12Game.h"
 #include "DirectX12_Graphics.h"
+#include "ModelData.h"
+using Microsoft::WRL::ComPtr;
 
 class DX12Game
 {
 	DX12Game() { };
+
+	ComPtr<ModelData> rin_model;
+
 public:
 	DX12Game(const DX12Game&) = delete;
 	DX12Game& operator=(const DX12Game&) = delete;

@@ -24,6 +24,7 @@
 
 //! ポインタに対してリリースする
 #define SAFE_RELEASE( value )      ( value != NULL ) ? ( value->Release(), value = NULL ) : ( value )
+#define SAFE_RELEASE_NULLPTR( value )      ( value != NULL ) ? ( value->Release(), value = nullptr ) : ( value )
 
 //! 配列のサイズを取得
 #define ARRAY_SIZE( array ) ( sizeof( array ) / sizeof( array[ 0 ] ) )

@@ -54,6 +54,15 @@
     <ClCompile Include="vertex.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="PMD_Layout.cpp">
+      <Filter>ソース ファイル\system\DX12\model</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelData.cpp">
+      <Filter>ソース ファイル\system\DX12\model</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h">
@@ -79,6 +88,15 @@
     </ClInclude>
     <ClInclude Include="vertex.h">
       <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="PMD_Layout.h">
+      <Filter>ヘッダー ファイル\system\DX12\model</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelData.h">
+      <Filter>ヘッダー ファイル\system\DX12\model</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

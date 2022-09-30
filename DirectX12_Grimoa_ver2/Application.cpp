@@ -133,6 +133,8 @@ bool Application::Init(HINSTANCE h_Instance)
 //==============================================================================
 void Application::Dispose(HINSTANCE h_cpInstance)
 {
+	DX12Game::GetInstance()->Dispose();
+
 	// 標準出力クローズ
 	fclose(m_fp);
 	// コンソール開放
