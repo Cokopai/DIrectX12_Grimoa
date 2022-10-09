@@ -7,13 +7,13 @@ void DX12Game::Init(HWND hWnd, unsigned int Width, unsigned int Height, bool ful
 {
 	DirectX12_Graphics::GetInstance()->Init(hWnd,Width,Height,fullscreen);
 
-	rin_model = new ModelData();
-	rin_model->CreateModel("Model/‹¾‰¹ƒŠƒ“.pmd");
+	rin_model = new PMDActor();
+	rin_model->Create();//"Model/‹¾‰¹ƒŠƒ“.pmd"
 }
 
 void DX12Game::Update()
 {
-
+	rin_model->Update();
 }
 
 void DX12Game::Draw()
@@ -21,8 +21,8 @@ void DX12Game::Draw()
 	DirectX12_Graphics* ins = DirectX12_Graphics::GetInstance();
 
 	ins->BeforeRender();
+	rin_model->Draw(ins->GetDXDevice());
 
-	ins->Draw(rin_model.Get());
 	ins->AfterRender();
 }
 

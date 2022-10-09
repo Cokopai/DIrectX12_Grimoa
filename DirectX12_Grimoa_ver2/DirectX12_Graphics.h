@@ -33,10 +33,13 @@ private:
 	ComPtr<ID3D12GraphicsCommandList>	 _cmdList = nullptr;
 	ComPtr<ID3D12CommandQueue>			 _cmdQueue = nullptr;
 
+	ComPtr<ID3DBlob>					 _errorBlob;
 	ComPtr<ID3DBlob>					 _vsBlob;
 	ComPtr<ID3DBlob>					 _psBlob;
 	//バックバッファ
 	std::array<ComPtr<ID3D12Resource>, 2>_backBuffers;
+	//深度バッファ
+	ComPtr<ID3D12Resource>				 _depthBuffer;
 
 	//フェンス
 	ComPtr<ID3D12Fence>					 _fence = nullptr;
@@ -45,6 +48,7 @@ private:
 	ComPtr<ID3D12PipelineState>			_pipelinestate = nullptr;
 	ComPtr<ID3D12RootSignature>			_rootSignature = nullptr;
 	ID3D12DescriptorHeap*				_rtvHeaps	= nullptr;//RenderTargetView Heaps
+	ComPtr<ID3D12DescriptorHeap>		_dsvHeap	= nullptr;//RenderTargetView Heaps
 
 	//画面クリア　カラー
 	float clearColor[4] = { 0.6f,1.0f,0.8f,1.0f };
@@ -68,9 +72,24 @@ public:
 
 	// 初期処理
 	bool Init(HWND hWnd,unsigned int Width, unsigned int Height, bool fullscreen);
+	HRESULT CreateDevice();
+	HRESULT CreateDXGIFactory();
+	HRESULT CreateCommand();
+
+	HRESULT CreateFence();
+	HRESULT CreateRTV();
+	HRESULT CreateDSV();
+
+	HRESULT CreateRootSigature();
+
+	unsigned const short swapBufferCount = 2;
+	HRESULT CreateSwapChain(HWND hWnd,unsigned int window_width, unsigned int window_height);
+
+	HRESULT CreateGraphicPipeline();
+
 	//更新処理
 	bool BeforeRender();
-	void Draw(ModelData* modelData)const;
+	void Draw();
 	bool AfterRender();
 
 	// 終了処理
@@ -86,5 +105,10 @@ public:
 		return _swapchain.Get();
 	}
 
+	ID3D12GraphicsCommandList* GetCommandList()const {
+		return _cmdList.Get();
+	}
+
 	void UpdateBufferSize(unsigned char* vertices);
 };
+

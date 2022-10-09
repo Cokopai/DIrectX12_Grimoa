@@ -1,26 +1,61 @@
 #pragma once
+#pragma comment (lib,"DirectXTex.lib")
 
-#include "Mesh.h"
-#include "PMD_Layout.h"
+#include	<wrl/client.h>
+#include	<d3d12.h>
+#include	<DirectXTex.h>
+#include	<vector>
+#include	"vertex.h"
+#include	"PMD_Layout.h"
 
 using Microsoft::WRL::ComPtr;
 
-class ModelData
+struct Texture {
+
+};
+
+class PMDActor
 {
-public:
+private:
+	XMFLOAT4X4 m_mtx;// = XMMatrixIdentity();
+	float angle = 0;
 	unsigned int m_vertNum;
 	unsigned int m_idxNum;
 
-	ComPtr<Mesh> m_Mesh;
 	PMDHeader m_pmdHeader;
 
-	void CreateModel(const char* fileName);
+	std::vector<unsigned char>  m_vertices;
+	std::vector<unsigned short> m_indices;
 
-	void AddRef() {};
-	unsigned long Release();
-};
+	ComPtr<ID3D12Resource> _vertexBuffer = nullptr;
+	ComPtr<ID3D12Resource> _indexBuffer = nullptr;
 
-class ModelLoader {
+	ComPtr<ID3D12Resource>		 _texBuffer = nullptr;
+	ComPtr<ID3D12Resource>		 _constBuffer = nullptr;
+	ID3D12DescriptorHeap*		 _basicDescHeap = nullptr;
+
+	DirectX::TexMetadata metaData = {};
+	DirectX::ScratchImage scratchImg = {};
 public:
+	PMDActor() { };
+
+	PMDActor(const PMDActor&) = delete;
+	PMDActor& operator=(const PMDActor&) = delete;
+	PMDActor(PMDActor&&) = delete;
+	PMDActor& operator=(PMDActor&&) = delete;
+
+	D3D12_VERTEX_BUFFER_VIEW vbView = { };
+	D3D12_INDEX_BUFFER_VIEW idView = { };
+
+	bool Create();
+
+	void TestMeshInit();
+	void Update();
+	void Draw(ID3D12Device* dev);
+	unsigned long Release();
+	ID3D12DescriptorHeap* GetBasicDescHeap() { return _basicDescHeap; };
+
+	void AddRef() { };
+	~PMDActor() { Release(); };
 };
 

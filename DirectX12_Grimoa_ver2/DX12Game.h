@@ -8,7 +8,7 @@ class DX12Game
 {
 	DX12Game() { };
 
-	ComPtr<ModelData> rin_model;
+	ComPtr<PMDActor> rin_model;
 
 public:
 	DX12Game(const DX12Game&) = delete;
