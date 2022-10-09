@@ -363,34 +363,31 @@ HRESULT DirectX12_Graphics::CreateRootSigature() {
 	rootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 
 	D3D12_DESCRIPTOR_RANGE descTblRange[2] = {};
-	//テクスチャ用 : レジスター[0]
-	descTblRange[0].NumDescriptors = 1;//テクスチャ1つ
-	descTblRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;//種別:SRV
+	//定数用 : レジスター[0]
+	descTblRange[0].NumDescriptors = 1;//定数1つ
+	descTblRange[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;//種別:定数
 	descTblRange[0].BaseShaderRegister = 0;//0番スロットから
 	descTblRange[0].OffsetInDescriptorsFromTableStart =
 		D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
 	//定数用 : レジスター[0]
 	descTblRange[1].NumDescriptors = 1;//定数1つ
 	descTblRange[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;//種別:定数
-	descTblRange[1].BaseShaderRegister = 0;//0番スロットから
+	descTblRange[1].BaseShaderRegister = 1;//1番スロットから
 	descTblRange[1].OffsetInDescriptorsFromTableStart =
 		D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND;
-	/*
-	レジスターの種別が違うため0番で重複していても問題ない
-	*/
 
 	D3D12_ROOT_PARAMETER rootparam[2] = {};
 	rootparam[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootparam[0].DescriptorTable.pDescriptorRanges = &descTblRange[0];
 	rootparam[0].DescriptorTable.NumDescriptorRanges = 1;//ディスクリプタレンジ数
 	rootparam[0].ShaderVisibility =
-		D3D12_SHADER_VISIBILITY_PIXEL;//ピクセルシェーダーから見える
+		D3D12_SHADER_VISIBILITY_ALL;//ピクセルシェーダーから見える
 
 	rootparam[1].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
 	rootparam[1].DescriptorTable.pDescriptorRanges = &descTblRange[1];
 	rootparam[1].DescriptorTable.NumDescriptorRanges = 1;//ディスクリプタレンジ数
 	rootparam[1].ShaderVisibility =
-		D3D12_SHADER_VISIBILITY_VERTEX;//頂点シェーダーから見える
+		D3D12_SHADER_VISIBILITY_PIXEL;//頂点シェーダーから見える
 
 	rootSignatureDesc.pParameters = rootparam;
 	rootSignatureDesc.NumParameters = 2;

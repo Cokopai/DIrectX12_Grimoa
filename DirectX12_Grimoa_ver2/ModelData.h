@@ -19,23 +19,31 @@ class PMDActor
 private:
 	XMFLOAT4X4 m_mtx;// = XMMatrixIdentity();
 	float angle = 0;
-	unsigned int m_vertNum;
-	unsigned int m_idxNum;
+	unsigned int				 m_vertNum;
+	unsigned int				 m_idxNum;
+	unsigned int 				 m_materialNum;
 
-	PMDHeader m_pmdHeader;
+	PMDHeader					 m_pmdHeader;
 
-	std::vector<unsigned char>  m_vertices;
-	std::vector<unsigned short> m_indices;
+	std::vector<unsigned char>   _vertices;
+	std::vector<unsigned short>  _indices;
+	std::vector<PMDMaterial>	 _pmdMaterials;//マテリアル読み取り用
+	std::vector<Material>		 _materials;//マテリアル保持用
 
-	ComPtr<ID3D12Resource> _vertexBuffer = nullptr;
-	ComPtr<ID3D12Resource> _indexBuffer = nullptr;
+	ComPtr<ID3D12Resource>		 _vertexBuffer = nullptr;
+	ComPtr<ID3D12Resource>		 _indexBuffer = nullptr;
+	ComPtr<ID3D12Resource>		 _materialBuffer = nullptr;
 
-	ComPtr<ID3D12Resource>		 _texBuffer = nullptr;
+	//ComPtr<ID3D12Resource>		 _texBuffer = nullptr;
+
 	ComPtr<ID3D12Resource>		 _constBuffer = nullptr;
 	ID3D12DescriptorHeap*		 _basicDescHeap = nullptr;
+	ID3D12DescriptorHeap*		 _materialDescHeap = nullptr;
 
-	DirectX::TexMetadata metaData = {};
-	DirectX::ScratchImage scratchImg = {};
+	char*						 _mapMaterial = nullptr;
+
+	//DirectX::TexMetadata metaData = {};
+	//DirectX::ScratchImage scratchImg = {};
 public:
 	PMDActor() { };
 
@@ -44,8 +52,8 @@ public:
 	PMDActor(PMDActor&&) = delete;
 	PMDActor& operator=(PMDActor&&) = delete;
 
-	D3D12_VERTEX_BUFFER_VIEW vbView = { };
-	D3D12_INDEX_BUFFER_VIEW idView = { };
+	D3D12_VERTEX_BUFFER_VIEW _vbView = { };
+	D3D12_INDEX_BUFFER_VIEW _idView = { };
 
 	bool Create();
 
@@ -54,6 +62,8 @@ public:
 	void Draw(ID3D12Device* dev);
 	unsigned long Release();
 	ID3D12DescriptorHeap* GetBasicDescHeap() { return _basicDescHeap; };
+	void MaterialTransport(unsigned int matNum);
+	HRESULT CreateMaterialBuffer();
 
 	void AddRef() { };
 	~PMDActor() { Release(); };

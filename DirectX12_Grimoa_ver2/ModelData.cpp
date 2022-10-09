@@ -20,13 +20,17 @@ bool PMDActor::Create()
 	
 	//Vertex読み取り
 	fread(&m_vertNum, sizeof(m_vertNum), 1, fp);
-	m_vertices.resize(m_vertNum * pmd_vertex_size);
-	fread(m_vertices.data(), m_vertices.size(), 1, fp);
+	_vertices.resize(m_vertNum * pmd_vertex_size);
+	fread(_vertices.data(), _vertices.size(), 1, fp);
 	
 	//Index読み取り
 	fread(&m_idxNum, sizeof(m_idxNum), 1, fp);
-	m_indices.resize(m_idxNum);
-	fread(m_indices.data(), m_indices.size() * sizeof(m_indices[0]), 1, fp);
+	_indices.resize(m_idxNum);
+	fread(_indices.data(), _indices.size() * sizeof(_indices[0]), 1, fp);
+
+	fread(&m_materialNum,sizeof(m_materialNum),1,fp);
+	_pmdMaterials.resize(m_materialNum);
+	fread(_pmdMaterials.data(), _pmdMaterials.size() * sizeof(PMDMaterial), 1, fp);
 
 	//std::vector<unsigned char> pmd_vertices;
 	//pmd_vertices.resize(vertexNum);
@@ -34,12 +38,8 @@ bool PMDActor::Create()
 
 	XMStoreFloat4x4(&m_mtx,XMMatrixIdentity());
 
-	sts = DirectX::LoadFromWICFile(
-		_T("img/textest.png"), WIC_FLAGS_NONE,
-		&metaData, scratchImg
-	);
-
-	auto img = scratchImg.GetImage(0, 0, 0);
+	MaterialTransport(m_materialNum);
+	sts = CreateMaterialBuffer();
 
 	auto dev = DirectX12_Graphics::GetInstance()->GetDXDevice();
 
@@ -55,7 +55,7 @@ bool PMDActor::Create()
 	D3D12_RESOURCE_DESC buffdesc = { };
 
 	buffdesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	buffdesc.Width = sizeof(m_vertices);
+	buffdesc.Width = sizeof(_vertices);
 	buffdesc.Height = 1;
 	buffdesc.DepthOrArraySize = 1;
 	buffdesc.MipLevels = 1;
@@ -65,7 +65,7 @@ bool PMDActor::Create()
 	buffdesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 	auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer(m_vertices.size());
+	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer(_vertices.size());
 
 	sts = dev->CreateCommittedResource(
 		&heapProp,
@@ -83,13 +83,13 @@ bool PMDActor::Create()
 
 	sts = _vertexBuffer->Map(0, nullptr, (void**)&vertMap);
 
-	std::copy(std::begin(m_vertices), std::end(m_vertices), vertMap);
+	std::copy(std::begin(_vertices), std::end(_vertices), vertMap);
 
 	_vertexBuffer->Unmap(0, nullptr);
 
-	vbView.BufferLocation = _vertexBuffer->GetGPUVirtualAddress();
-	vbView.SizeInBytes = m_vertices.size();
-	vbView.StrideInBytes = pmd_vertex_size;
+	_vbView.BufferLocation = _vertexBuffer->GetGPUVirtualAddress();
+	_vbView.SizeInBytes = _vertices.size();
+	_vbView.StrideInBytes = pmd_vertex_size;
 	/////////////////////////////////////////////////////////////
 	//VertexsBuffer初期化	End
 	/////////////////////////////////////////////////////////////
@@ -97,9 +97,9 @@ bool PMDActor::Create()
 	/////////////////////////////////////////////////////////////
 	//IndexBuffer初期化	Start
 	/////////////////////////////////////////////////////////////
-	buffdesc.Width = sizeof(m_indices);
+	buffdesc.Width = sizeof(_indices);
 
-	resDesc = CD3DX12_RESOURCE_DESC::Buffer(m_indices.size() * sizeof(m_indices[0]));
+	resDesc = CD3DX12_RESOURCE_DESC::Buffer(_indices.size() * sizeof(_indices[0]));
 
 	sts = dev->CreateCommittedResource(
 		&heapProp,
@@ -115,12 +115,12 @@ bool PMDActor::Create()
 
 	unsigned short* mappedIdx = nullptr;
 	_indexBuffer->Map(0, nullptr, (void**)&mappedIdx);
-	std::copy(std::begin(m_indices), std::end(m_indices), mappedIdx);
+	std::copy(std::begin(_indices), std::end(_indices), mappedIdx);
 	_indexBuffer->Unmap(0, nullptr);
 
-	idView.BufferLocation = _indexBuffer->GetGPUVirtualAddress();
-	idView.Format = DXGI_FORMAT_R16_UINT;
-	idView.SizeInBytes = m_indices.size() * sizeof(m_indices[0]);
+	_idView.BufferLocation = _indexBuffer->GetGPUVirtualAddress();
+	_idView.Format = DXGI_FORMAT_R16_UINT;
+	_idView.SizeInBytes = _indices.size() * sizeof(_indices[0]);
 	/////////////////////////////////////////////////////////////
 	//IndexBuffer初期化	End
 	/////////////////////////////////////////////////////////////
@@ -145,9 +145,11 @@ bool PMDActor::Create()
 	//DescRiptorHeap初期化	End
 	/////////////////////////////////////////////////////////////
 
+	/*
 	/////////////////////////////////////////////////////////////
 	//ShaderResourceView初期化	Start
 	/////////////////////////////////////////////////////////////
+	
 	//WriteToSubResource でテクスチャ情報を転送するためのヒープ設定
 	D3D12_HEAP_PROPERTIES _texheapProp = {};
 	//カスタム設定
@@ -195,7 +197,8 @@ bool PMDActor::Create()
 	if (sts != S_OK) {
 		MessageBox(nullptr, _T("textureBuffer Copy Texture Error!"), _T("error"), MB_OK);
 	}
-
+	*/
+	/*
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 
 	srvDesc.Format = metaData.format;
@@ -205,24 +208,26 @@ bool PMDActor::Create()
 	srvDesc.Texture2D.MipLevels = 1;//ミップマップは使用しないので１
 
 	dev->CreateShaderResourceView(
-		_texBuffer.Get(),
+		_materialBuffer.Get(),
 		&srvDesc,
 		basicHeapHandle
 	);
+	*/
+	
 	/////////////////////////////////////////////////////////////
 	//ShaderResourceView初期化	End
 	/////////////////////////////////////////////////////////////
 
-	basicHeapHandle.ptr += dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	//basicHeapHandle.ptr += dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	/////////////////////////////////////////////////////////////
 	//ConstBuffer初期化	Start
 	/////////////////////////////////////////////////////////////
 
 	heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-	resDesc = CD3DX12_RESOURCE_DESC::Buffer((sizeof(XMFLOAT4X4) + 0xff) & ~0xff);
+	resDesc = CD3DX12_RESOURCE_DESC::Buffer((sizeof(SceneData) + 0xff) & ~0xff);
 
-	dev->CreateCommittedResource(
+	sts = dev->CreateCommittedResource(
 		&heapProp,
 		D3D12_HEAP_FLAG_NONE,
 		&resDesc,
@@ -231,11 +236,17 @@ bool PMDActor::Create()
 		IID_PPV_ARGS(&_constBuffer)
 	);
 
+	if (FAILED(sts)) {
+		MessageBox(nullptr, _T("ConstantBuffer Create Error!"), _T("error"), MB_OK);
+	}
+
 	D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
 	cbvDesc.BufferLocation = _constBuffer->GetGPUVirtualAddress();
 	cbvDesc.SizeInBytes = _constBuffer.Get()->GetDesc().Width;
 
 	dev->CreateConstantBufferView(&cbvDesc, basicHeapHandle);
+
+
 	/////////////////////////////////////////////////////////////
 	//ConstBuffer初期化	End
 	/////////////////////////////////////////////////////////////
@@ -266,53 +277,197 @@ void PMDActor::TestMeshInit()
 void PMDActor::Update()
 {
 	angle += 0.01f;
-	XMMATRIX mtx = XMMatrixRotationY(angle);
+	XMMATRIX world_mtx = XMMatrixRotationY(angle);
 
 	XMFLOAT3 eye(0, 10, -15);
 	XMFLOAT3 target(0, 10, 0);
 	XMFLOAT3 up(0, 1, 0);
 
-	mtx *= XMMatrixLookAtLH(
+	//ビュー変換
+	XMMATRIX view_mtx = XMMatrixLookAtLH(
 		XMLoadFloat3(&eye), XMLoadFloat3(&target), XMLoadFloat3(&up));
-
-	mtx *= XMMatrixPerspectiveFovLH(
+	//プロジェクション変換
+	XMMATRIX proj_mtx = XMMatrixPerspectiveFovLH(
 		XM_PIDIV2,//画角は90°
 		static_cast<float>(CLIENT_WIDTH) / static_cast<float>(CLIENT_HEIGHT),//アスペクト比
 		1.0f,//ニアクリップ
 		100.0f//ファークリップ
 	);
 
-	XMFLOAT4X4* mapMatrix;
+	SceneData* mapMatrix;
+
 	_constBuffer->Map(0, nullptr, (void**)&mapMatrix);
-	XMStoreFloat4x4(mapMatrix, mtx);
+	XMStoreFloat4x4(&mapMatrix->world,world_mtx);
+	XMStoreFloat4x4(&mapMatrix->view,view_mtx);
+	XMStoreFloat4x4(&mapMatrix->proj,proj_mtx);
+	mapMatrix->eye = eye;
 }
 
 void PMDActor::Draw(ID3D12Device* dev)
 {
 	auto _cmdList = DirectX12_Graphics::GetInstance()->GetCommandList();
 
-	_cmdList->IASetVertexBuffers(0, 1, &vbView);
-	_cmdList->IASetIndexBuffer(&idView);
+	_cmdList->IASetVertexBuffers(0, 1, &_vbView);
+	_cmdList->IASetIndexBuffer(&_idView);
 
 	_cmdList->SetDescriptorHeaps(1, &_basicDescHeap);
 	_cmdList->SetGraphicsRootDescriptorTable(0, _basicDescHeap->GetGPUDescriptorHandleForHeapStart());
 
 	auto HeapHandle = _basicDescHeap->GetGPUDescriptorHandleForHeapStart();
+	
 	HeapHandle.ptr += dev->GetDescriptorHandleIncrementSize(
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV
 	);
+	
+	/*
+	//マテリアル
+	_cmdList->SetDescriptorHeaps(1, &_materialDescHeap);
+
+	auto materialH = _materialDescHeap->GetGPUDescriptorHandleForHeapStart();
+	unsigned int idxOffset = 0;
+
+	auto cbvsrvIncSize = dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	for (auto& m : _materials) {
+		_cmdList->SetGraphicsRootDescriptorTable(1, materialH);
+		_cmdList->DrawIndexedInstanced(m.indicesNum, 1, idxOffset, 0, 0);
+		materialH.ptr += cbvsrvIncSize;
+		idxOffset += m.indicesNum;
+	}
+
+	*/
+	
 	_cmdList->SetGraphicsRootDescriptorTable(1, HeapHandle);
 
 	_cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	_cmdList->DrawIndexedInstanced(m_idxNum, 1, 0, 0, 0);
+	
 }
 
 unsigned long PMDActor::Release()
 {
-	m_vertices.clear();
-	m_indices.clear();
+	_vertices.clear();
+	_indices.clear();
 	SAFE_RELEASE(_basicDescHeap);
+	SAFE_RELEASE(_materialDescHeap);
 
 	return 0;
+}
+
+void PMDActor::MaterialTransport(unsigned int matNum)
+{
+	_materials.resize(matNum);
+	for (int i = 0; i < matNum; ++i) {
+		_materials[i].indicesNum = _pmdMaterials[i].indecesNum;
+		_materials[i].material.diffuse = _pmdMaterials[i].diffuse;
+		_materials[i].material.alpha = _pmdMaterials[i].alpha;
+		_materials[i].material.specular = _pmdMaterials[i].specular;
+		_materials[i].material.specularity = _pmdMaterials[i].specularity;
+		_materials[i].material.ambient = _pmdMaterials[i].ambient;
+		_materials[i].additional.toonIdx = _pmdMaterials[i].toonIdx;
+	}
+
+}
+
+HRESULT PMDActor::CreateMaterialBuffer()
+{
+	HRESULT sts;
+	auto dev = DirectX12_Graphics::GetInstance()->GetDXDevice();
+
+	auto materialBufferSize = sizeof(MaterialForHlsl);
+	materialBufferSize = (materialBufferSize + 0xff) & ~0xff;
+
+	auto heapProp = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
+	auto resDesc = CD3DX12_RESOURCE_DESC::Buffer(
+		materialBufferSize * m_materialNum);
+
+	sts = dev->CreateCommittedResource(
+		&heapProp,
+		D3D12_HEAP_FLAG_NONE,
+		&resDesc,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&_materialBuffer)
+	);
+
+	if (FAILED(sts)) {
+		MessageBox(nullptr, _T("MaterialBuffer Create Error!"), _T("error"), MB_OK);
+	}
+
+	sts = _materialBuffer->Map(0,nullptr,(void**)&_mapMaterial);
+
+	for (auto& m : _materials) {
+		*((MaterialForHlsl*)_mapMaterial) = m.material;
+		_mapMaterial += materialBufferSize;//次のアライメント位置まで進める（256の倍数）
+	}
+
+	D3D12_DESCRIPTOR_HEAP_DESC materialDescHeapDesc = {};
+	materialDescHeapDesc.NumDescriptors = m_materialNum;//マテリアル数ぶん(定数1つ、テクスチャ3つ)
+	materialDescHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+	materialDescHeapDesc.NodeMask = 0;
+
+	materialDescHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;//デスクリプタヒープ種別
+	sts = dev->CreateDescriptorHeap(&materialDescHeapDesc, IID_PPV_ARGS(&_materialDescHeap));//生成
+
+	if (FAILED(sts)) {
+		MessageBox(nullptr, _T("materialDescHeap Create Error!"), _T("error"), MB_OK);
+	}
+
+	D3D12_CONSTANT_BUFFER_VIEW_DESC matCBVDesc = {};
+	matCBVDesc.BufferLocation = _materialBuffer->GetGPUVirtualAddress();
+	matCBVDesc.SizeInBytes = static_cast<UINT>(materialBufferSize);
+
+	auto matDescHeapH = _materialDescHeap->GetCPUDescriptorHandleForHeapStart();
+	auto incSize = dev->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	for (size_t i = 0; i < m_materialNum; ++i) {
+		//マテリアル固定バッファビュー
+		dev->CreateConstantBufferView(&matCBVDesc, matDescHeapH);
+		matDescHeapH.ptr += incSize;
+		matCBVDesc.BufferLocation += materialBufferSize;
+
+		/*
+		if (textureResources[i] == nullptr) {
+			srvDesc.Format = whiteTex->GetDesc().Format;
+			_dev->CreateShaderResourceView(whiteTex, &srvDesc, matDescHeapH);
+		}
+		else {
+			srvDesc.Format = textureResources[i]->GetDesc().Format;
+			_dev->CreateShaderResourceView(textureResources[i], &srvDesc, matDescHeapH);
+		}
+		matDescHeapH.ptr += incSize;
+
+		if (sphResources[i] == nullptr) {
+			srvDesc.Format = whiteTex->GetDesc().Format;
+			_dev->CreateShaderResourceView(whiteTex, &srvDesc, matDescHeapH);
+		}
+		else {
+			srvDesc.Format = sphResources[i]->GetDesc().Format;
+			_dev->CreateShaderResourceView(sphResources[i], &srvDesc, matDescHeapH);
+		}
+		matDescHeapH.ptr += incSize;
+
+		if (spaResources[i] == nullptr) {
+			srvDesc.Format = blackTex->GetDesc().Format;
+			_dev->CreateShaderResourceView(blackTex, &srvDesc, matDescHeapH);
+		}
+		else {
+			srvDesc.Format = spaResources[i]->GetDesc().Format;
+			_dev->CreateShaderResourceView(spaResources[i], &srvDesc, matDescHeapH);
+		}
+		matDescHeapH.ptr += incSize;
+
+
+		if (toonResources[i] == nullptr) {
+			srvDesc.Format = gradTex->GetDesc().Format;
+			_dev->CreateShaderResourceView(gradTex, &srvDesc, matDescHeapH);
+		}
+		else {
+			srvDesc.Format = toonResources[i]->GetDesc().Format;
+			_dev->CreateShaderResourceView(toonResources[i], &srvDesc, matDescHeapH);
+		}
+		matDescHeapH.ptr += incSize;
+		*/
+	}
+
+	return sts;
 }

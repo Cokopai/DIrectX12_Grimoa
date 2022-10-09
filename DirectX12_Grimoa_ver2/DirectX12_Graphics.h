@@ -47,8 +47,8 @@ private:
 
 	ComPtr<ID3D12PipelineState>			_pipelinestate = nullptr;
 	ComPtr<ID3D12RootSignature>			_rootSignature = nullptr;
-	ID3D12DescriptorHeap*				_rtvHeaps	= nullptr;//RenderTargetView Heaps
-	ComPtr<ID3D12DescriptorHeap>		_dsvHeap	= nullptr;//RenderTargetView Heaps
+	ID3D12DescriptorHeap*				_rtvHeaps = nullptr;//RenderTargetView Heaps
+	ComPtr<ID3D12DescriptorHeap>		_dsvHeap = nullptr;//depthStencilView Heaps
 
 	//画面クリア　カラー
 	float clearColor[4] = { 0.6f,1.0f,0.8f,1.0f };
@@ -71,7 +71,7 @@ public:
 	}
 
 	// 初期処理
-	bool Init(HWND hWnd,unsigned int Width, unsigned int Height, bool fullscreen);
+	bool Init(HWND hWnd, unsigned int Width, unsigned int Height, bool fullscreen);
 	HRESULT CreateDevice();
 	HRESULT CreateDXGIFactory();
 	HRESULT CreateCommand();
@@ -83,7 +83,7 @@ public:
 	HRESULT CreateRootSigature();
 
 	unsigned const short swapBufferCount = 2;
-	HRESULT CreateSwapChain(HWND hWnd,unsigned int window_width, unsigned int window_height);
+	HRESULT CreateSwapChain(HWND hWnd, unsigned int window_width, unsigned int window_height);
 
 	HRESULT CreateGraphicPipeline();
 
@@ -96,7 +96,7 @@ public:
 	void Exit();
 
 	// デバイスGET
-	ID3D12Device*	GetDXDevice() const {
+	ID3D12Device* GetDXDevice() const {
 		return _dev.Get();
 	}
 
@@ -107,8 +107,6 @@ public:
 
 	ID3D12GraphicsCommandList* GetCommandList()const {
 		return _cmdList.Get();
-	}
 
-	void UpdateBufferSize(unsigned char* vertices);
+	};
 };
-

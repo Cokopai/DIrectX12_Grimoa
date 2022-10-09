@@ -159,7 +159,6 @@
     <ClCompile Include="DirectX12_Graphics.cpp" />
     <ClCompile Include="DX12Game.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="ModelData.cpp" />
     <ClCompile Include="PMD_Layout.cpp" />
     <ClCompile Include="vertex.cpp" />
@@ -171,7 +170,6 @@
     <ClInclude Include="DirectX12_Graphics.h" />
     <ClInclude Include="DX12Game.h" />
     <ClInclude Include="macro.h" />
-    <ClInclude Include="Mesh.h" />
     <ClInclude Include="ModelData.h" />
     <ClInclude Include="PMD_Layout.h" />
     <ClInclude Include="resource.h" />
